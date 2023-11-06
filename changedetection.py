@@ -24,7 +24,7 @@ def sigchld_handler(_signo, _stack_frame):
     raise SystemExit
 
 if __name__ == '__main__':
-
+    print('I am running...')
     #signal.signal(signal.SIGCHLD, sigchld_handler)
 
     # The only way I could find to get Flask to shutdown, is to wrap it and then rely on the subsystem issuing SIGTERM/SIGKILL

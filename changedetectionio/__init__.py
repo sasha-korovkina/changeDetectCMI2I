@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from changedetectionio import queuedWatchMetaData
+import pandas as pd
 from copy import deepcopy
 from distutils.util import strtobool
 from feedgen.feed import FeedGenerator
@@ -14,11 +15,13 @@ import datetime
 import flask_login
 import logging
 import os
+import openpyxl
 import pytz
 import queue
 import threading
 import time
 import timeago
+from bs4 import BeautifulSoup
 
 from flask import (
     Flask,
@@ -210,6 +213,7 @@ def login_optionally_required(func):
     return decorated_view
 
 def changedetection_app(config=None, datastore_o=None):
+    print('App formation starting...')
     global datastore
     datastore = datastore_o
 
@@ -220,7 +224,6 @@ def changedetection_app(config=None, datastore_o=None):
     login_manager = flask_login.LoginManager(app)
     login_manager.login_view = 'login'
     app.secret_key = init_app_secret(config['datastore_path'])
-
 
     watch_api.add_resource(api_v1.WatchSingleHistory,
                            '/api/v1/watch/<string:uuid>/history/<string:timestamp>',
@@ -242,9 +245,6 @@ def changedetection_app(config=None, datastore_o=None):
     # Setup cors headers to allow all domains
     # https://flask-cors.readthedocs.io/en/latest/
     #    CORS(app)
-
-
-
     @login_manager.user_loader
     def user_loader(email):
         user = User()
@@ -433,7 +433,7 @@ def changedetection_app(config=None, datastore_o=None):
                     sorted_watches.append(watch)
             else:
                 sorted_watches.append(watch)
-
+        print('Here are the sorted watches: ' + str(sorted_watches))
         form = forms.quickWatchForm(request.form)
         page = request.args.get(get_page_parameter(), type=int, default=1)
         total_count = len(sorted_watches)
@@ -464,7 +464,7 @@ def changedetection_app(config=None, datastore_o=None):
                                  tags=datastore.data['settings']['application'].get('tags'),
                                  watches=sorted_watches
                                  )
-
+        #print(output)
         if session.get('share-link'):
             del(session['share-link'])
 
@@ -982,17 +982,14 @@ def changedetection_app(config=None, datastore_o=None):
                                  )
 
         return output
-
+    ############################################# PREVIEW #############################################
     @app.route("/preview/<string:uuid>", methods=['GET'])
     @login_optionally_required
+
     def preview_page(uuid):
         content = []
         ignored_line_numbers = []
         trigger_line_numbers = []
-
-        # More for testing, possible to return the first/only
-        if uuid == 'first':
-            uuid = list(datastore.data['watching'].keys()).pop()
 
         try:
             watch = datastore.data['watching'][uuid]
@@ -1022,6 +1019,7 @@ def changedetection_app(config=None, datastore_o=None):
                                      last_error=watch['last_error'],
                                      last_error_text=watch.get_error_text(),
                                      last_error_screenshot=watch.get_error_snapshot())
+            print(content)
             return output
 
         timestamp = list(watch.history.keys())[-1]
@@ -1069,7 +1067,15 @@ def changedetection_app(config=None, datastore_o=None):
                                  last_error=watch['last_error'],
                                  last_error_text=watch.get_error_text(),
                                  last_error_screenshot=watch.get_error_snapshot())
+        print(ignored_line_numbers)
+        print(type(content))
 
+        df = pd.DataFrame({'Lines': content})
+        new_df = df[~df['Lines'].isin(ignored_line_numbers)]
+        new_df['Lines'] = new_df['Lines'].apply(lambda row: row['line'])
+        new_df.to_excel(r"M:\CDB\Analyst\Sasha\Code\webScrapeTest.xlsx", index=False)
+
+        print(new_df)
         return output
 
     @app.route("/settings/notification-logs", methods=['GET'])

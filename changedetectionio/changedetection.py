@@ -29,6 +29,7 @@ def sigterm_handler(_signo, _stack_frame):
 #    raise SystemExit
 
 def main():
+    print('I am in changedetection-main')
     global datastore
     global app
 
@@ -43,9 +44,11 @@ def main():
     if os.name == 'nt':
         datastore_path = os.path.expandvars(r'%APPDATA%\changedetection.io')
         os.makedirs(datastore_path, exist_ok=True)
+        print('Datastore path is: ' + datastore_path)
     else:
         # Must be absolute so that send_from_directory doesnt try to make it relative to backend/
         datastore_path = os.path.join(os.getcwd(), "../datastore")
+        print('Datastore path is: ' + datastore_path)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "6Ccsd:h:p:", "port")
@@ -94,11 +97,14 @@ def main():
 
     try:
         datastore = store.ChangeDetectionStore(datastore_path=app_config['datastore_path'], version_tag=__version__)
+        print('the datastore for JSON is: ' + str(datastore))
     except JSONDecodeError as e:
         # Dont' start if the JSON DB looks corrupt
         print ("ERROR: JSON DB or Proxy List JSON at '{}' appears to be corrupt, aborting".format(app_config['datastore_path']))
         print(str(e))
         return
+
+####################################  DATASTORE MANIPULATIONS FINISHED  ####################################
 
     app = changedetection_app(app_config, datastore)
 
