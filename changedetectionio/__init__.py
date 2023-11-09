@@ -10,6 +10,7 @@ from flask_login import current_user
 from flask_restful import abort, Api
 from flask_wtf import CSRFProtect
 from functools import wraps
+from openpyxl import load_workbook
 from threading import Event
 import datetime
 import flask_login
@@ -984,8 +985,30 @@ def changedetection_app(config=None, datastore_o=None):
                                  )
         print('Printing diff...')
         print(watch['url'])
-        #print(from_version_file_contents)
-        #print(to_version_file_contents)
+        # making an excel file for the URL
+        url_suffix = watch['url'].split('www.')[1]
+        url_suffix = url_suffix.replace('/', '_')
+        folder_path = r'M:\CDB\Analyst\Sasha\Code\All Web Links'
+        current_datetime = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        sheet_name_diff = os.path.join(folder_path, f'{url_suffix}.xlsx')
+        print(sheet_name_diff)
+
+        # Create a new workbook and save it
+        wb = Workbook()
+        print(to_version_file_contents)
+        print(type(to_version_file_contents))
+        lines = to_version_file_contents.strip().split('\n')
+        dfDiff = pd.DataFrame({'Lines': lines})
+
+        sheet = wb.create_sheet(title=current_datetime)
+        # Write the DataFrame to the sheet
+        for r_idx, row in enumerate(dfDiff.itertuples(index=False), 1):
+            sheet.append(row)
+
+        # Save the workbook
+        wb.save(sheet_name_diff)
+        print(f'Updated Saved...')
+
         return output
     ############################################# PREVIEW #############################################
     @app.route("/preview/<string:uuid>", methods=['GET'])
@@ -1079,7 +1102,7 @@ def changedetection_app(config=None, datastore_o=None):
         url_suffix = url_suffix.replace('/', '_')
         folder_path = r'M:\CDB\Analyst\Sasha\Code\All Web Links'
         current_datetime = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        sheet_name = os.path.join(folder_path, f'{current_datetime}_{url_suffix}.xlsx')
+        sheet_name = os.path.join(folder_path, f'{url_suffix}.xlsx')
         if not os.path.exists(sheet_name):
             # Create a new workbook and save it
             wb = Workbook()
