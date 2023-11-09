@@ -16,9 +16,11 @@ import flask_login
 import logging
 import os
 import openpyxl
+from openpyxl import Workbook
 import pytz
 import queue
 import threading
+from datetime import datetime
 import time
 import timeago
 from bs4 import BeautifulSoup
@@ -980,7 +982,10 @@ def changedetection_app(config=None, datastore_o=None):
                                  versions=dates, # All except current/last
                                  watch_a=watch
                                  )
-
+        print('Printing diff...')
+        print(watch['url'])
+        #print(from_version_file_contents)
+        #print(to_version_file_contents)
         return output
     ############################################# PREVIEW #############################################
     @app.route("/preview/<string:uuid>", methods=['GET'])
@@ -1067,15 +1072,33 @@ def changedetection_app(config=None, datastore_o=None):
                                  last_error=watch['last_error'],
                                  last_error_text=watch.get_error_text(),
                                  last_error_screenshot=watch.get_error_snapshot())
-        print(ignored_line_numbers)
-        print(type(content))
+        print('Preview Text: ')
 
-        df = pd.DataFrame({'Lines': content})
-        new_df = df[~df['Lines'].isin(ignored_line_numbers)]
-        new_df['Lines'] = new_df['Lines'].apply(lambda row: row['line'])
-        new_df.to_excel(r"M:\CDB\Analyst\Sasha\Code\webScrapeTest.xlsx", index=False)
+        # making an excel file for the URL
+        url_suffix = watch['url'].split('www.')[1]
+        url_suffix = url_suffix.replace('/', '_')
+        folder_path = r'M:\CDB\Analyst\Sasha\Code\All Web Links'
+        current_datetime = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        sheet_name = os.path.join(folder_path, f'{current_datetime}_{url_suffix}.xlsx')
+        if not os.path.exists(sheet_name):
+            # Create a new workbook and save it
+            wb = Workbook()
+            df = pd.DataFrame({'Lines': content})
+            new_df = df[~df['Lines'].isin(ignored_line_numbers)]
+            new_df['Lines'] = new_df['Lines'].apply(lambda row: row['line'])
+            sheet = wb.create_sheet(title=current_datetime)
+            # Write the DataFrame to the sheet
+            for r_idx, row in enumerate(new_df.itertuples(index=False), 1):
+                sheet.append(row)
 
-        print(new_df)
+            # Save the workbook
+            wb.save(sheet_name)
+            print(f'Empty Excel sheet "{url_suffix}.xlsx" created at {folder_path}')
+        else:
+            print(f'Excel sheet "{url_suffix}.xlsx" already exists at {folder_path}')
+
+        # print('New df is: ' + new_df)
+        # print(new_df)
         return output
 
     @app.route("/settings/notification-logs", methods=['GET'])
