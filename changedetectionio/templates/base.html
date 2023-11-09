@@ -59,16 +59,13 @@
             {% if not
             current_diff_url %}
               <li class="pure-menu-item">
-                <a href="{{ url_for('tags.tags_overview_page')}}" class="pure-menu-link">GROUPS</a>
+                <a href="{{ url_for('tags.tags_overview_page')}}" class="pure-menu-link">Groups</a>
               </li>
               <li class="pure-menu-item">
-                <a href="{{ url_for('settings_page')}}" class="pure-menu-link">SETTINGS</a>
+                <a href="{{ url_for('settings_page')}}" class="pure-menu-link">Settings</a>
               </li>
               <li class="pure-menu-item">
-                <a href="{{ url_for('import_page')}}" class="pure-menu-link">IMPORT</a>
-              </li>
-              <li class="pure-menu-item">
-                <a href="{{ url_for('get_backup')}}" class="pure-menu-link">BACKUP</a>
+                <a href="{{ url_for('import_page')}}" class="pure-menu-link">Import</a>
               </li>
             {% else %}
               <li class="pure-menu-item">
